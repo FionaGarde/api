@@ -8,7 +8,7 @@ const server = http.createServer((req, res) => {
 
     switch (url) {
         case "/":
-            res.end("Home");
+            res.end("Hizege !");
             break;
         case "/posts":
             res.statusCode = 200;
