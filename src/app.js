@@ -1,26 +1,22 @@
-const http = require('http');
+const express = require('express');
 
 const hostname = "0.0.0.0";
 const port = 3000;
 
-const server = http.createServer((req, res) => {
-    let url = req.url;
+const server = express();
 
-    switch (url) {
-        case "/":
-            res.end("Hizege !");
-            break;
-        case "/posts":
-            res.statusCode = 200;
-            res.setHeader = ('Content-type', "text/html");
-            res.end("Liste des articles");
-            break;
-    
-        default:
-            res.statusCode = 404;
-            res.end("Erreur");
-            break;
-    }
+server.get("/", (req, res) => {
+    res.type('html');
+    res.status(200);
+    res.end("Home");
 });
 
-server.listen(port,hostname);
+server.get("/posts", (req, res) => {
+    res.type('html');
+    res.status(200);
+    res.end("Liste des articles");
+});
+
+server.listen(port,hostname, () => {
+    console.log(`Serveur qui tourne sur le port ${port}`)
+});
