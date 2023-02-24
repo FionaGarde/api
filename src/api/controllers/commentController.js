@@ -1,7 +1,8 @@
-const Post = require('../models/postModel');
 
-exports.listAllPosts = (req, res) => {
-    Post.find({}, (error, posts) => {
+const Comment = require('../models/commentModel');
+
+exports.listAllComments = (req, res) => {
+    Comment.findById(req.params.post_id, req.body, { new: true }, (error, comment) => {
         if (error) {
             res.status(500);
             console.log(error);
@@ -9,14 +10,14 @@ exports.listAllPosts = (req, res) => {
         }
         else {
             res.status(200);
-            res.json(posts);
+            res.json(comments);
         }
     })
 }
 
-exports.createAPost = (req, res) => {
-    let newPost = new Post(req.body);
-    newPost.save((error, post) => {
+exports.createAComment = (req, res) => {
+    let newComment = new Comment(req.body);
+    newComment.save((error, comment) => {
         if (error) {
             res.status(401);
             console.log(error);
@@ -24,13 +25,13 @@ exports.createAPost = (req, res) => {
         }
         else {
             res.status(201);
-            res.json(post);
+            res.json(comment);
         }
     })
 }
 
-exports.getAPost = (req, res) => {
-    Post.findById(req.params.post_id, (error, post) => {
+exports.getAComment = (req, res) => {
+    Comment.findById(req.params.comment_id, (error, comment) => {
         if (error) {
             res.status(500);
             console.log(error);
@@ -38,13 +39,13 @@ exports.getAPost = (req, res) => {
         }
         else {
             res.status(200);
-            res.json(post);
+            res.json(comment);
         }
     })
 }
 
-exports.updateAPost = (req, res) => {
-    Post.findByIdAndUpdate(req.params.post_id, req.body, { new: true }, (error, post) => {
+exports.updateAComment = (req, res) => {
+    Comment.findByIdAndUpdate(req.params.comment_id, req.body, { new: true }, (error, comment) => {
         if (error) {
             res.status(500);
             console.log(error);
@@ -52,13 +53,13 @@ exports.updateAPost = (req, res) => {
         }
         else {
             res.status(200);
-            res.json(post);
+            res.json(comment);
         }
     })
 }
 
-exports.deleteAPost = (req, res) => {
-    Post.findByIdAndRemove(req.params.post_id, (error) => {
+exports.deleteAComment = (req, res) => {
+    Comment.findByIdAndRemove(req.params.comment_id, (error) => {
         if (error) {
             res.status(500);
             console.log(error);
