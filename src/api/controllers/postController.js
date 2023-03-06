@@ -1,5 +1,7 @@
 const Post = require('../models/postModel');
 
+const textApiProvider = require('../providers/textApiProvider');
+
 exports.listAllPosts = (req, res) => {
     Post.find({}, (error, posts) => {
         if (error) {
@@ -16,17 +18,40 @@ exports.listAllPosts = (req, res) => {
 
 exports.createAPost = (req, res) => {
     let newPost = new Post(req.body);
-    newPost.save((error, post) => {
-        if (error) {
-            res.status(401);
-            console.log(error);
-            res.json({ message: "Reqûete invalide." });
-        }
-        else {
-            res.status(201);
-            res.json(post);
-        }
-    })
+
+    if(!newPost.content){
+        let RandomText = textApiProvider.getRandomText();
+
+        RandomText.then((result) =>{
+            newPost.content = result.body;
+
+            newPost.save((error, post) => {
+                if (error) {
+                    res.status(401);
+                    console.log(error);
+                    res.json({ message: "Reqûete invalide." });
+                }
+                else {
+                    res.status(201);
+                    res.json(post);
+                }
+            })
+        })
+    }
+    else{
+        newPost.save((error, post) => {
+            if (error) {
+                res.status(401);
+                console.log(error);
+                res.json({ message: "Reqûete invalide." });
+            }
+            else {
+                res.status(201);
+                res.json(post);
+            }
+        })
+    }
+
 }
 
 exports.getAPost = (req, res) => {

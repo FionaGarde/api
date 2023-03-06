@@ -7,8 +7,7 @@ let postSchema = new Schema({
         require: true
     },
     content: {
-        type: String,
-        require: true   
+        type: String  
     },
     created_at: {
         type: Date,
