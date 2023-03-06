@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+
 let commentSchema = new Schema({
     name: {
         type: String,
@@ -14,9 +15,6 @@ let commentSchema = new Schema({
         default: Date.now
     },
     post_id: {
-        type: String
-    },
-    comment_id: {
         type: String
     }
 });

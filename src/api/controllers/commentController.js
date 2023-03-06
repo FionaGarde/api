@@ -1,8 +1,9 @@
 
+const Post = require('../models/postModel');
 const Comment = require('../models/commentModel');
 
 exports.listAllComments = (req, res) => {
-    Comment.findById(req.params.post_id, req.body, { new: true }, (error, comment) => {
+    Comment.find({post_id: req.params.post_id}, (error, comments) => {
         if (error) {
             res.status(500);
             console.log(error);
@@ -16,16 +17,27 @@ exports.listAllComments = (req, res) => {
 }
 
 exports.createAComment = (req, res) => {
-    let newComment = new Comment(req.body);
-    newComment.save((error, comment) => {
+
+    Post.findById(req.prams.post_id, (error, posts) => {
         if (error) {
             res.status(401);
             console.log(error);
             res.json({ message: "Reqûete invalide." });
         }
         else {
-            res.status(201);
-            res.json(comment);
+            let newComment = new Comment({...req.body, post_id: req.params.post_id});
+          
+            newComment.save((error, comment) => {
+                if (error) {
+                    res.status(401);
+                    console.log(error);
+                    res.json({ message: "Reqûete invalide." });
+                }
+                else {
+                    res.status(201);
+                    res.json(comment);
+                }
+            })
         }
     })
 }
