@@ -1,0 +1,165 @@
+const assert = require('assert');
+const sinon = require('sinon');
+
+const Post = require('../models/postModel');
+const textApiProvider = require('../providers/textApiProvider');
+const postController = require('../controllers/postController');
+
+describe('postController', function() {
+  describe('#listAllPosts()', function() {
+    if('should return all posts', function(done) {
+      const mockPosts = [{ title: 'Post 1' }, { title: 'Post 2' }];
+      const findStub = sinon.stub(Post, 'find');
+      findStub.yields(null, mockPosts);
+
+      const req = {};
+      const res = {
+        status: function(statusCode) {
+          assert.equal(statusCode, 200);
+          return this;
+        },
+        json: function(data) {
+          assert.deepStrictEqual(data, mockPosts);
+          findStub.restore();
+          done();
+        }
+      };
+
+      postController.listAllPosts(req, res);
+    });
+  });
+
+  describe('#createAPost()', function() {
+    if('should create a post without content', function(done) {
+      const mockPost = { title: 'New Post' };
+      const newPostStub = sinon.stub(Post.prototype, 'save');
+      newPostStub.yields(null, mockPost);
+
+      const randomTextStub = sinon.stub(textApiProvider, 'getRandomText');
+      randomTextStub.resolves({ body: 'Random Text' });
+
+      const req = { body: { title: 'New Post' } };
+      const res = {
+        status: function(statusCode) {
+          assert.equal(statusCode, 201);
+          return this;
+        },
+        json: function(data) {
+          assert.deepStrictEqual(data, mockPost);
+          newPostStub.restore();
+          randomTextStub.restore();
+          done();
+        }
+      };
+
+      postController.createAPost(req, res);
+    });
+
+    if('should create a post with content', function(done) {
+      const mockPost = { title: 'New Post', content: 'Some Content' };
+      const newPostStub = sinon.stub(Post.prototype, 'save');
+      newPostStub.yields(null, mockPost);
+
+      const req = { body: { title: 'New Post', content: 'Some Content' } };
+      const res = {
+        status: function(statusCode) {
+          assert.equal(statusCode, 201);
+          return this;
+        },
+        json: function(data) {
+          assert.deepStrictEqual(data, mockPost);
+          newPostStub.restore();
+          done();
+        }
+      };
+
+      postController.createAPost(req, res);
+    });
+
+    if('should handle invalid request', function(done) {
+      const newPostStub = sinon.stub(Post.prototype, 'save');
+      newPostStub.yields({ message: 'Error' });
+
+      const req = { body: {} };
+      const res = {
+        status: function(statusCode) {
+          assert.equal(statusCode, 401);
+          return this;
+        },
+        json: function(data) {
+          assert.deepStrictEqual(data, { message: 'Reqûete invalide.' });
+          newPostStub.restore();
+          done();
+        }
+      };
+
+      postController.createAPost(req, res);
+    });
+  });
+
+  describe('#getAPost()', function() {
+    if('should return a post by id', function(done) {
+      const postMock = { _id: 'some_id', title: 'Test title', content: 'Test content' };
+      const findByIdStub = sinon.stub(Post, 'findById');
+      findByIdStub.withArgs('some_id').yields(null, postMock);
+  
+      const req = { params: { post_id: 'some_id' } };
+      const res = {
+        status: function(statusCode) {
+          assert.strictEqual(statusCode, 200);
+          return this;
+        },
+        json: function(post) {
+          assert.deepStrictEqual(post, postMock);
+          findByIdStub.restore();
+          done();
+        }
+      };
+      postController.getAPost(req, res);
+    });
+  });
+
+  describe('#updateAPost()', function() {
+    if('should update a post by id', function(done) {
+      const postMock = { _id: 'some_id', title: 'Test title', content: 'Test content' };
+      const updateStub = sinon.stub(Post, 'findByIdAndUpdate');
+      updateStub.withArgs('some_id', { title: 'New title' }, { new: true }).yields(null, postMock);
+  
+      const req = { params: { post_id: 'some_id' }, body: { title: 'New title' } };
+      const res = {
+        status: function(statusCode) {
+          assert.strictEqual(statusCode, 200);
+          return this;
+        },
+        json: function(post) {
+          assert.deepStrictEqual(post, postMock);
+          updateStub.restore();
+          done();
+        }
+      };
+      postController.updateAPost(req, res);
+    });
+  });
+
+  describe('#deleteAPost()', function() {
+    if('should delete a post by id', function(done) {
+      const removeStub = sinon.stub(Post, 'findByIdAndRemove');
+      removeStub.withArgs('some_id').yields(null);
+  
+      const req = { params: { post_id: 'some_id' } };
+      const res = {
+        status: function(statusCode) {
+          assert.strictEqual(statusCode, 200);
+          return this;
+        },
+        json: function(response) {
+          assert.deepStrictEqual(response, { message: 'Article supprimé' });
+          removeStub.restore();
+          done();
+        }
+      };
+      postController.deleteAPost(req, res);
+    });
+  });
+
+})

@@ -1,0 +1,191 @@
+const assert = require('assert');
+const sinon = require('sinon');
+const commentController = require('../controllers/commentController');
+const Post = require('../models/postModel');
+const Comment = require('../models/commentModel');
+
+describe('commentController', () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = { 
+      params: { post_id: 'testPostId', comment_id: 'testCommentId' },
+      body: { content: 'testContent' }
+    };
+    res = { 
+      status: sinon.stub().returns({ json: sinon.spy() }),
+      json: sinon.spy() 
+    };
+  });
+
+  describe('listAllComments', () => {
+    if('should return all comments of a post', async () => {
+      const expectedComments = [{ content: 'comment1' }, { content: 'comment2' }];
+      sinon.stub(Comment, 'find').callsArgWith(1, null, expectedComments);
+
+      await commentController.listAllComments(req, res);
+
+      assert(res.status.calledWith(200));
+      assert(res.json.calledWith(expectedComments));
+      Comment.find.restore();
+    });
+
+    if('should return an error message if there is an error in finding the comments', async () => {
+      const errorMessage = 'Error finding comments';
+      sinon.stub(Comment, 'find').callsArgWith(1, new Error(errorMessage));
+
+      await commentController.listAllComments(req, res);
+
+      assert(res.status.calledWith(500));
+      assert(res.json.calledWith({ message: 'Erreur serveur.' }));
+      Comment.find.restore();
+    });
+  });
+
+  describe('createAComment', () => {
+    if('should return a new comment if the request is valid', () => {
+      const req = {
+        params: { post_id: 'postId' },
+        body: { text: 'New comment' }
+      };
+      const res = {
+        status: sinon.stub().returnsThis(),
+        json: sinon.stub()
+      };
+      const save = sinon.stub();
+      const postFindById = sinon.stub(Post, 'findById').yields(null, {});
+      const commentSave = sinon.stub(Comment.prototype, 'save').yields(null, { text: 'New comment', post_id: 'postId', save });
+      
+      controller.createAComment(req, res);
+      
+      sinon.assert.calledWith(postFindById, 'postId');
+      sinon.assert.calledWith(commentSave);
+      sinon.assert.calledWith(res.status, 201);
+      sinon.assert.calledWith(res.json, { text: 'New comment', post_id: 'postId' });
+      
+      Post.findById.restore();
+      Comment.prototype.save.restore();
+    });
+    
+    if('should return an error message if the request is invalid', () => {
+      const req = {
+        params: { post_id: 'postId' },
+        body: { text: 'New comment' }
+      };
+      const res = {
+        status: sinon.stub().returnsThis(),
+        json: sinon.stub()
+      };
+      const postFindById = sinon.stub(Post, 'findById').yields(new Error('Invalid request'));
+      
+      controller.createAComment(req, res);
+      
+      sinon.assert.calledWith(postFindById, 'postId');
+      sinon.assert.calledWith(res.status, 401);
+      sinon.assert.calledWith(res.json, { message: 'Reqûete invalide.' });
+      
+      Post.findById.restore();
+    });
+  });
+  
+  describe('getAComment', () => {
+    if('should return a comment if found', () => {
+      const req = { params: { comment_id: 'commentId' } };
+      const res = {
+        status: sinon.stub().returnsThis(),
+        json: sinon.stub()
+      };
+      const commentFindById = sinon.stub(Comment, 'findById').yields(null, { text: 'Comment' });
+      
+      controller.getAComment(req, res);
+      
+      sinon.assert.calledWith(commentFindById, 'commentId');
+      sinon.assert.calledWith(res.status, 200);
+      sinon.assert.calledWith(res.json, { text: 'Comment' });
+      
+      Comment.findById.restore();
+    });
+    
+    if('should return an error message if not found', () => {
+      const req = { params: { comment_id: 'commentId' } };
+      const res = {
+        status: sinon.stub().returnsThis(),
+        json: sinon.stub()
+      };
+      const commentFindById = sinon.stub(Comment, 'findById').yields(new Error('Comment not found'));
+      
+      controller.getAComment(req, res);
+      
+      sinon.assert.calledWith(commentFindById, 'commentId');
+      sinon.assert.calledWith(res.status, 500);
+      sinon.assert.calledWith(res.json, { message: 'Erreur serveur.' });
+      
+      Comment.findById.restore();
+    });
+  });
+  
+  describe('updateAComment', () => {
+    if('should update a comment', async () => {
+      const req = { params: { comment_id: 123 }, body: { content: 'updated content' } };
+      const res = {
+        status: sinon.spy(),
+        json: sinon.spy(),
+      };
+      sinon.stub(Comment, 'findByIdAndUpdate').yields(null, req.body);
+      
+      await commentController.updateAComment(req, res);
+      
+      expect(res.status.calledWith(200)).to.be.true;
+      expect(res.json.calledWith(req.body)).to.be.true;
+      Comment.findByIdAndUpdate.restore();
+    });
+
+    if('should return error if update fails', async () => {
+      const req = { params: { comment_id: 123 }, body: { content: 'updated content' } };
+      const res = {
+        status: sinon.spy(),
+        json: sinon.spy(),
+      };
+      sinon.stub(Comment, 'findByIdAndUpdate').yields('error', null);
+
+      await commentController.updateAComment(req, res);
+
+      expect(res.status.calledWith(500)).to.be.true;
+      expect(res.json.calledWith({ message: 'Erreur serveur.' })).to.be.true;
+      Comment.findByIdAndUpdate.restore();
+    });
+  });
+
+  describe('deleteAComment', () => {
+    if('should delete a comment', async () => {
+      const req = { params: { comment_id: 123 } };
+      const res = {
+        status: sinon.spy(),
+        json: sinon.spy(),
+      };
+      sinon.stub(Comment, 'findByIdAndRemove').yields(null);
+      
+      await commentController.deleteAComment(req, res);
+      
+      expect(res.status.calledWith(200)).to.be.true;
+      expect(res.json.calledWith({ message: 'Article supprimé' })).to.be.true;
+      Comment.findByIdAndRemove.restore();
+    });
+
+    if('should return error if deletion fails', async () => {
+      const req = { params: { comment_id: 123 } };
+      const res = {
+        status: sinon.spy(),
+        json: sinon.spy(),
+      };
+      sinon.stub(Comment, 'findByIdAndRemove').yields('error', null);
+
+      await commentController.deleteAComment(req, res);
+
+      expect(res.status.calledWith(500)).to.be.true;
+      expect(res.json.calledWith({ message: 'Erreur serveur.' })).to.be.true;
+      Comment.findByIdAndRemove.restore();
+    });
+  });
+  
+});
